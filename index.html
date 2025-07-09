@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Account Summarizer: Solution Comparison & Decision Tool</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- React and ReactDOM CDNs -->
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <!-- Babel Standalone CDN for in-browser JSX transpilation -->
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <style>
+        /* Custom font for a consistent look */
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+    </style>
+</head>
+<body class="bg-gray-100 flex items-center justify-center min-h-screen p-4">
+    <div id="root" class="w-full max-w-6xl"></div>
+
+    <script type="text/babel">
+        // Data for Evaluation Criteria
+        const evaluationCriteria = [
+            {
+                category: "Core AI Capabilities",
+                items: [
+                    { id: "nlp", name: "Natural Language Processing (NLP)" },
+                    { id: "genAI", name: "Generative AI (LLMs)" },
+                    { id: "predictiveAnalytics", name: "Predictive Analytics" },
+                ],
+            },
+            {
+                category: "Integration & Data Flow",
+                items: [
+                    { id: "salesforceIntegration", name: "Salesforce Native/Deep Integration" },
+                    { id: "dataWarehouseCompatibility", name: "Data Warehouse Compatibility (Snowflake/Hightouch)" },
+                    { id: "biDirectionalSync", name: "Bi-directional Sync" },
+                ],
+            },
+            {
+                category: "Implementation & Scalability",
+                items: [
+                    { id: "timeToValue", name: "Time-to-Value (Speed of Deployment)" },
+                    { id: "scalability", name: "Scalability" },
+                    { id: "customizationFlexibility", name: "Customization & Flexibility" },
+                ],
+            },
+            {
+                category: "Total Cost of Ownership (TCO)",
+                items: [
+                    { id: "licensingCosts", name: "Licensing/Subscription Costs" },
+                    { id: "implementationSetupCosts", name: "Implementation & Setup Costs" },
+                    { id: "maintenanceSupportCosts", name: "Maintenance & Support Costs" },
+                ],
+            },
+            {
+                category: "Vendor & Support",
+                items: [
+                    { id: "vendorReputation", name: "Vendor Reputation & Roadmap" },
+                    { id: "customerSupport", name: "Customer Support & Training" },
+                ],
+            },
+            {
+                category: "Data Security & Compliance",
+                items: [
+                    { id: "dataPrivacy", name: "Data Privacy & Governance" },
+                    { id: "securityFeatures", name: "Security Features" },
+                ],
+            },
+        ];
+
+        // Data for Solutions
+        const solutions = [
+            {
+                id: "catalyst",
+                name: "Catalyst (Buy)",
+                tag: "Primary Recommendation",
+                description: "Modern, flexible Customer Success Platform built for data-centric teams.",
+                characteristics: {
+                    nlp: "Built for data-centric teams, implies strong analytics.",
+                    genAI: "Built for data-centric teams, implies strong analytics.",
+                    predictiveAnalytics: "Built for data-centric teams, implies strong analytics.", // Implied from "data-centric"
+                    salesforceIntegration: "Most strategically aligned 'buy' option, fits perfectly with existing stack.",
+                    dataWarehouseCompatibility: "Excels at integrating with a company's central data warehouse like Hightouch, making it a natural extension of a modern data stack. Explicitly pulls data from Snowflake.",
+                    biDirectionalSync: "Implied by 'fits perfectly with existing stack' and 'proactive account management goals'.",
+                    timeToValue: "Fastest path to achieving proactive account management goals (weeks).",
+                    scalability: "Implied high scalability as a modern platform.",
+                    customizationFlexibility: "Flexible, data-warehouse-first architecture.",
+                    licensingCosts: "Aligned with TCO goals, subscription-based.",
+                    implementationSetupCosts: "Aligned with TCO goals.",
+                    maintenanceSupportCosts: "Minimal for standard features, as it is a vendor-supported solution.",
+                    vendorReputation: "Strong reputation as a Customer Success Platform.", // Implied
+                    customerSupport: "Vendor-supported solution.", // Implied
+                    dataPrivacy: "Implied enterprise-grade security.",
+                    securityFeatures: "Implied enterprise-grade security.",
+                },
+            },
+            {
+                id: "nativeSalesforce",
+                name: "Native Salesforce (Build)",
+                tag: "Strong Alternative",
+                description: "Custom 360-degree view using Salesforce's own platform tools (Flow, Lightning Pages).",
+                characteristics: {
+                    nlp: "Requires in-house AI/ML expertise for custom NLP/Generative AI.",
+                    genAI: "Requires in-house AI/ML expertise for custom NLP/Generative AI.",
+                    predictiveAnalytics: "Requires in-house AI/ML expertise (and CRM Analytics add-on).",
+                    salesforceIntegration: "Uses Salesforce's own platform tools, ultimate customization. Unparalleled customization and user adoption.",
+                    dataWarehouseCompatibility: "Requires custom build for Snowflake integration.",
+                    biDirectionalSync: "Full control over data flow, but requires custom development.",
+                    timeToValue: "Slower time-to-value (3-9 months for V1.0).",
+                    scalability: "Requires building robust architecture to handle high data volumes and user concurrency.",
+                    customizationFlexibility: "Unparalleled customization. Fully customizable logic, UI, and workflows.",
+                    licensingCosts: "Requires CRM Analytics add-on.",
+                    implementationSetupCosts: "Higher initial resource and time investment.",
+                    maintenanceSupportCosts: "Ongoing maintenance burden (model retraining, prompt tuning, integration updates, monitoring, support).",
+                    vendorReputation: "Internal team expertise.",
+                    customerSupport: "Internal only; requires in-house AI/ML expertise.",
+                    dataPrivacy: "Full control over data privacy and compliance. Must be built internally.",
+                    securityFeatures: "Full control over data privacy and compliance. Must be built internally.",
+                },
+            },
+            {
+                id: "salesforceEinstein",
+                name: "Salesforce Einstein (Buy)",
+                tag: null,
+                description: "Salesforce's own AI capabilities, often bundled or as add-ons.",
+                characteristics: {
+                    nlp: "NLP & Summarization (generative AI, extracts entities, suggests next steps).",
+                    genAI: "Generative AI capabilities. Supports 'Bring Your Own LLM'.",
+                    predictiveAnalytics: "Predictive Analytics.",
+                    salesforceIntegration: "Native, deep integration across Sales Cloud, Service Cloud, and custom objects. Data accessed directly within Salesforce UI. Bi-directional sync available.",
+                    dataWarehouseCompatibility: "Supports integration with external data sources via Salesforce Data Cloud and connectors (e.g., Snowflake).",
+                    biDirectionalSync: "Bi-directional sync available.",
+                    timeToValue: "Fast deployment (weeks), especially for out-of-the-box features. Custom LLM integrations may require additional configuration.",
+                    scalability: "Designed for enterprise scale, supporting thousands of accounts and high data volumes.",
+                    customizationFlexibility: "High (low-code tools and prompt builders). Allows tailoring summarization logic and output formats.",
+                    licensingCosts: "Subscription-based, typically bundled or as add-ons. API usage fees for external LLMs.",
+                    implementationSetupCosts: "Part of subscription/add-on cost.",
+                    maintenanceSupportCosts: "Vendor-supported.",
+                    vendorReputation: "Backed by Salesforce's global support and robust product roadmap.",
+                    customerSupport: "Backed by Salesforce's global support.",
+                    dataPrivacy: "Enterprise-grade security, GDPR compliant.",
+                    securityFeatures: "Enterprise-grade security, GDPR compliant.",
+                },
+            },
+            {
+                id: "salesEnablementPlatforms",
+                name: "AI-Powered Sales Enablement Platforms (e.g., Gong.io / Highspot)",
+                tag: null,
+                description: "Tools specializing in sales effectiveness (conversation intelligence, content management).",
+                characteristics: {
+                    nlp: "NLP for call/email summarization.",
+                    genAI: "Generative AI for next steps, content recommendations.",
+                    predictiveAnalytics: "Conversation intelligence, content recommendations.", // Implied from sales effectiveness
+                    salesforceIntegration: "Deep integration, Native app, Call summaries, insights, and KPIs in Salesforce. Bi-directional sync.",
+                    dataWarehouseCompatibility: "Supports integration with external data warehouses.",
+                    biDirectionalSync: "Bi-directional sync.",
+                    timeToValue: "Fast deployment (weeks).",
+                    scalability: "Enterprise-grade.",
+                    customizationFlexibility: "Moderate; custom fields, reporting, triggers, playbooks, content.",
+                    licensingCosts: "Subscription-based.",
+                    implementationSetupCosts: "Part of subscription cost.",
+                    maintenanceSupportCosts: "Vendor-supported.",
+                    vendorReputation: "Strong vendor reputation in sales enablement.", // Implied
+                    customerSupport: "Strong vendor support.",
+                    dataPrivacy: "Enterprise security, GDPR compliant.",
+                    securityFeatures: "Enterprise security, GDPR compliant.",
+                },
+            },
+            {
+                id: "crmGenAIApis",
+                name: "CRM Integration with Generative AI APIs",
+                tag: null,
+                description: "Integrate Salesforce with large language models (LLMs) via APIs (e.g., Google's Gemini, OpenAI's GPT) to generate summaries and next steps.",
+                characteristics: {
+                    nlp: "Powerful summarization capabilities.",
+                    genAI: "Powerful generative capabilities.",
+                    predictiveAnalytics: "Requires custom development for predictive analytics.",
+                    salesforceIntegration: "Requires integration development with Salesforce.",
+                    dataWarehouseCompatibility: "Requires custom development for data warehouse integration.",
+                    biDirectionalSync: "Requires custom development for bi-directional sync.",
+                    timeToValue: "Varies; depends on internal resources and complexity.",
+                    scalability: "Depends on API limits and custom architecture.",
+                    customizationFlexibility: "High, depends on prompt engineering and custom development.",
+                    licensingCosts: "API usage fees, development, and maintenance costs.",
+                    implementationSetupCosts: "Development costs.",
+                    maintenanceSupportCosts: "Ongoing maintenance costs.",
+                    vendorReputation: "Depends on LLM provider (e.g., Google, OpenAI).",
+                    customerSupport: "Depends on LLM provider.",
+                    dataPrivacy: "Depends on LLM provider and how data is handled in transit/at rest.",
+                    securityFeatures: "Depends on LLM provider and how data is handled in transit/at rest.",
+                },
+            },
+        ];
+
+        // Component for a single Solution Card
+        const SolutionCard = ({ solution }) => {
+            const isRecommended = solution.tag === "Primary Recommendation";
+            const isAlternative = solution.tag === "Strong Alternative";
+
+            return (
+                <div className={`relative bg-white rounded-xl shadow-lg p-6 m-4 flex-1 min-w-[280px] max-w-[350px]
+                                ${isRecommended ? 'border-4 border-blue-600' : ''}
+                                ${isAlternative ? 'border-4 border-blue-400' : ''}`}>
+                    {isRecommended && (
+                        <span className="absolute top-0 right-0 bg-blue-600 text-white text-xs font-bold px-3 py-1 rounded-bl-lg rounded-tr-xl">
+                            Primary Recommendation
+                        </span>
+                    )}
+                    {isAlternative && (
+                        <span className="absolute top-0 right-0 bg-blue-400 text-white text-xs font-bold px-3 py-1 rounded-bl-lg rounded-tr-xl">
+                            Strong Alternative
+                        </span>
+                    )}
+                    <h3 className="text-xl font-bold text-gray-800 mb-2">{solution.name}</h3>
+                    <p className="text-gray-600 text-sm">{solution.description}</p>
+                </div>
+            );
+        };
+
+        // Main App Component
+        const App = () => {
+            return (
+                <div className="min-h-screen bg-gray-100 flex flex-col items-center py-8 px-4 font-sans antialiased">
+                    {/* Header */}
+                    <header className="w-full max-w-6xl text-center mb-10">
+                        <h1 className="text-4xl font-extrabold text-blue-800 mb-4 rounded-xl bg-blue-100 p-4 shadow-md">
+                            AI Account Summarizer: Solution Comparison & Decision Tool
+                        </h1>
+                        <p className="text-lg text-gray-700">
+                            Evaluate potential "Buy" vs. "Build" solutions for enhancing AM productivity and driving targeted growth.
+                        </p>
+                    </header>
+
+                    {/* Solution Cards Section */}
+                    <section className="w-full max-w-6xl mb-12">
+                        <h2 className="text-2xl font-bold text-gray-800 mb-6 text-center">Potential Solutions Overview</h2>
+                        <div className="flex flex-wrap justify-center items-stretch">
+                            {solutions.map((solution) => (
+                                <SolutionCard key={solution.id} solution={solution} />
+                            ))}
+                        </div>
+                    </section>
+
+                    {/* Comparison Section */}
+                    <section className="w-full max-w-6xl bg-white rounded-xl shadow-lg p-8">
+                        <h2 className="text-2xl font-bold text-gray-800 mb-6 text-center">Detailed Comparison by Criteria</h2>
+                        {evaluationCriteria.map((category) => (
+                            <div key={category.category} className="mb-8">
+                                <h3 className="text-xl font-semibold text-blue-700 mb-4 border-b-2 border-blue-200 pb-2">
+                                    {category.category}
+                                </h3>
+                                {category.items.map((criterion) => (
+                                    <div key={criterion.id} className="mb-4 p-3 bg-gray-50 rounded-lg shadow-sm">
+                                        <h4 className="text-lg font-medium text-gray-800 mb-2">{criterion.name}</h4>
+                                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 text-sm text-gray-700">
+                                            {solutions.map((solution) => (
+                                                <div key={solution.id} className="bg-white p-3 rounded-md border border-gray-200">
+                                                    <p className="font-semibold text-blue-600 mb-1">{solution.name}:</p>
+                                                    <p>{solution.characteristics[criterion.id] || 'N/A'}</p>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        ))}
+                    </section>
+                </div>
+            );
+        };
+
+        // Render the App component into the 'root' div
+        ReactDOM.render(<App />, document.getElementById('root'));
+    </script>
+</body>
+</html>
