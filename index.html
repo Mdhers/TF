@@ -11,6 +11,8 @@
     <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
     <!-- Babel Standalone CDN for in-browser JSX transpilation -->
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <!-- Chart.js CDN for charting -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         /* Custom font for a consistent look */
         body {
@@ -22,6 +24,8 @@
     <div id="root" class="w-full max-w-6xl"></div>
 
     <script type="text/babel">
+        const { useState, useEffect, useRef } = React;
+
         // Data for Evaluation Criteria
         const evaluationCriteria = [
             {
@@ -117,7 +121,7 @@
                     implementationSetupCosts: "Higher initial resource and time investment.",
                     maintenanceSupportCosts: "Ongoing maintenance burden (model retraining, prompt tuning, integration updates, monitoring, support).",
                     vendorReputation: "Internal team expertise.",
-                    customerSupport: "Internal only; requires in-house AI/ML expertise.",
+                    primaryContact: "Internal only; requires in-house AI/ML expertise.", // Corrected from customerSupport to primaryContact for Build option
                     dataPrivacy: "Full control over data privacy and compliance. Must be built internally.",
                     securityFeatures: "Full control over data privacy and compliance. Must be built internally.",
                 },
@@ -223,6 +227,126 @@
 
         // Main App Component
         const App = () => {
+            // State for cost inputs for each of the three main solutions
+            const [costs, setCosts] = useState({
+                catalyst: { dev: 0, licensePerUnit: 0, numLicenses: 0 },
+                nativeSalesforce: { dev: 0, licensePerUnit: 0, numLicenses: 0 },
+                salesforceEinstein: { dev: 0, licensePerUnit: 0, numLicenses: 0 },
+            });
+
+            const chartRef = useRef(null); // Ref for the chart canvas
+            const chartInstanceRef = useRef(null); // Ref to store the Chart.js instance
+
+            // Helper to update costs for a specific solution
+            const handleCostChange = (solutionId, field, value) => {
+                setCosts(prevCosts => ({
+                    ...prevCosts,
+                    [solutionId]: {
+                        ...prevCosts[solutionId],
+                        [field]: parseFloat(value) || 0
+                    }
+                }));
+            };
+
+            // Calculate costs for a single solution over 5 years
+            const calculateFiveYearCosts = (solutionCosts) => {
+                const year1LicenseCost = solutionCosts.licensePerUnit * solutionCosts.numLicenses;
+                const year1Total = solutionCosts.dev + year1LicenseCost;
+
+                const years2To5LicenseCost = solutionCosts.licensePerUnit * solutionCosts.numLicenses * 4; // 4 years (Year 2, 3, 4, 5)
+
+                const fiveYearTotal = year1Total + years2To5LicenseCost;
+
+                return {
+                    year1: year1Total,
+                    year2: year1LicenseCost,
+                    year3: year1LicenseCost,
+                    year4: year1LicenseCost,
+                    year5: year1LicenseCost,
+                    fiveYearTotal: fiveYearTotal
+                };
+            };
+
+            const mainSolutions = solutions.filter(s => ['catalyst', 'nativeSalesforce', 'salesforceEinstein'].includes(s.id));
+
+            // Effect to draw/update the chart
+            useEffect(() => {
+                const ctx = chartRef.current;
+                if (!ctx) return;
+
+                const labels = mainSolutions.map(s => s.name);
+                const data = mainSolutions.map(s => calculateFiveYearCosts(costs[s.id]).fiveYearTotal);
+
+                if (chartInstanceRef.current) {
+                    chartInstanceRef.current.destroy(); // Destroy existing chart instance if it exists
+                }
+
+                chartInstanceRef.current = new Chart(ctx, {
+                    type: 'bar',
+                    data: {
+                        labels: labels,
+                        datasets: [{
+                            label: '5-Year Total Cost (€)',
+                            data: data,
+                            backgroundColor: [
+                                'rgba(59, 130, 246, 0.7)', // blue-500
+                                'rgba(96, 165, 250, 0.7)', // blue-400
+                                'rgba(147, 197, 253, 0.7)', // blue-300
+                            ],
+                            borderColor: [
+                                'rgba(59, 130, 246, 1)',
+                                'rgba(96, 165, 250, 1)',
+                                'rgba(147, 197, 253, 1)',
+                            ],
+                            borderWidth: 1
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false, // Allow chart to fill container
+                        scales: {
+                            y: {
+                                beginAtZero: true,
+                                title: {
+                                    display: true,
+                                    text: 'Cost (€)'
+                                },
+                                ticks: {
+                                    callback: function(value) {
+                                        return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'EUR', minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(value);
+                                    }
+                                }
+                            }
+                        },
+                        plugins: {
+                            legend: {
+                                display: false // Hide legend as bars are self-explanatory
+                            },
+                            tooltip: {
+                                callbacks: {
+                                    label: function(context) {
+                                        let label = context.dataset.label || '';
+                                        if (label) {
+                                            label += ': ';
+                                        }
+                                        label += new Intl.NumberFormat('en-US', { style: 'currency', currency: 'EUR', minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(context.raw);
+                                        return label;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                });
+
+                // Cleanup function to destroy chart when component unmounts
+                return () => {
+                    if (chartInstanceRef.current) {
+                        chartInstanceRef.current.destroy();
+                        chartInstanceRef.current = null;
+                    }
+                };
+            }, [costs]); // Re-run effect when costs change
+
             return (
                 <div className="min-h-screen bg-gray-100 flex flex-col items-center py-8 px-4 font-sans antialiased">
                     {/* Header */}
@@ -246,7 +370,7 @@
                     </section>
 
                     {/* Comparison Section */}
-                    <section className="w-full max-w-6xl bg-white rounded-xl shadow-lg p-8">
+                    <section className="w-full max-w-6xl bg-white rounded-xl shadow-lg p-8 mb-12">
                         <h2 className="text-2xl font-bold text-gray-800 mb-6 text-center">Detailed Comparison by Criteria</h2>
                         {evaluationCriteria.map((category) => (
                             <div key={category.category} className="mb-8">
@@ -268,6 +392,159 @@
                                 ))}
                             </div>
                         ))}
+                    </section>
+
+                    {/* Final Assessment Section */}
+                    <section className="w-full max-w-6xl bg-white rounded-xl shadow-lg p-8">
+                        <h2 className="text-2xl font-bold text-gray-800 mb-6 text-center">Final Assessment: 5-Year Cost Comparison</h2>
+                        <p className="text-center text-gray-600 mb-8">
+                            Input your estimated costs below to compare the three main solution options over a 5-year period.
+                        </p>
+
+                        <div className="overflow-x-auto mb-8">
+                            <table className="min-w-full bg-white border border-gray-200 rounded-lg shadow-sm">
+                                <thead className="bg-blue-50">
+                                    <tr>
+                                        <th className="py-3 px-4 text-left text-sm font-semibold text-gray-700 border-b">Metric</th>
+                                        {mainSolutions.map(s => (
+                                            <th key={s.id} className="py-3 px-4 text-center text-sm font-semibold text-gray-700 border-b">
+                                                {s.name}
+                                                {s.tag && <span className="block text-xs font-normal text-blue-500">({s.tag})</span>}
+                                            </th>
+                                        ))}
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {/* Development Costs */}
+                                    <tr>
+                                        <td className="py-3 px-4 border-b text-gray-800 font-medium">Development Costs (Year 1, €)</td>
+                                        <td className="py-3 px-4 border-b text-center">
+                                            <input
+                                                type="number"
+                                                value={costs.catalyst.dev}
+                                                onChange={(e) => handleCostChange('catalyst', 'dev', e.target.value)}
+                                                className="w-24 p-2 border rounded-md text-center"
+                                                placeholder="0"
+                                            />
+                                        </td>
+                                        <td className="py-3 px-4 border-b text-center">
+                                            <input
+                                                type="number"
+                                                value={costs.nativeSalesforce.dev}
+                                                onChange={(e) => handleCostChange('nativeSalesforce', 'dev', e.target.value)}
+                                                className="w-24 p-2 border rounded-md text-center"
+                                                placeholder="0"
+                                            />
+                                        </td>
+                                        <td className="py-3 px-4 border-b text-center">
+                                            <input
+                                                type="number"
+                                                value={costs.salesforceEinstein.dev}
+                                                onChange={(e) => handleCostChange('salesforceEinstein', 'dev', e.target.value)}
+                                                className="w-24 p-2 border rounded-md text-center"
+                                                placeholder="0"
+                                            />
+                                        </td>
+                                    </tr>
+                                    {/* License Costs (per unit) */}
+                                    <tr>
+                                        <td className="py-3 px-4 border-b text-gray-800 font-medium">License Costs (€/unit/year)</td>
+                                        <td className="py-3 px-4 border-b text-center">
+                                            <input
+                                                type="number"
+                                                value={costs.catalyst.licensePerUnit}
+                                                onChange={(e) => handleCostChange('catalyst', 'licensePerUnit', e.target.value)}
+                                                className="w-24 p-2 border rounded-md text-center"
+                                                placeholder="0"
+                                            />
+                                        </td>
+                                        <td className="py-3 px-4 border-b text-center">
+                                            <input
+                                                type="number"
+                                                value={costs.nativeSalesforce.licensePerUnit}
+                                                onChange={(e) => handleCostChange('nativeSalesforce', 'licensePerUnit', e.target.value)}
+                                                className="w-24 p-2 border rounded-md text-center"
+                                                placeholder="0"
+                                            />
+                                        </td>
+                                        <td className="py-3 px-4 border-b text-center">
+                                            <input
+                                                type="number"
+                                                value={costs.salesforceEinstein.licensePerUnit}
+                                                onChange={(e) => handleCostChange('salesforceEinstein', 'licensePerUnit', e.target.value)}
+                                                className="w-24 p-2 border rounded-md text-center"
+                                                placeholder="0"
+                                            />
+                                        </td>
+                                    </tr>
+                                    {/* Number of Licenses */}
+                                    <tr>
+                                        <td className="py-3 px-4 border-b text-gray-800 font-medium">Number of Licenses</td>
+                                        <td className="py-3 px-4 border-b text-center">
+                                            <input
+                                                type="number"
+                                                value={costs.catalyst.numLicenses}
+                                                onChange={(e) => handleCostChange('catalyst', 'numLicenses', e.target.value)}
+                                                className="w-24 p-2 border rounded-md text-center"
+                                                placeholder="0"
+                                            />
+                                        </td>
+                                        <td className="py-3 px-4 border-b text-center">
+                                            <input
+                                                type="number"
+                                                value={costs.nativeSalesforce.numLicenses}
+                                                onChange={(e) => handleCostChange('nativeSalesforce', 'numLicenses', e.target.value)}
+                                                className="w-24 p-2 border rounded-md text-center"
+                                                placeholder="0"
+                                            />
+                                        </td>
+                                        <td className="py-3 px-4 border-b text-center">
+                                            <input
+                                                type="number"
+                                                value={costs.salesforceEinstein.numLicenses}
+                                                onChange={(e) => handleCostChange('salesforceEinstein', 'numLicenses', e.target.value)}
+                                                className="w-24 p-2 border rounded-md text-center"
+                                                placeholder="0"
+                                            />
+                                        </td>
+                                    </tr>
+                                    {/* Calculated Rows for 5-Year Scenario */}
+                                    {[1, 2, 3, 4, 5].map(year => (
+                                        <tr key={`year-${year}`}>
+                                            <td className={`py-3 px-4 border-b text-gray-800 ${year === 1 ? 'font-semibold' : 'font-medium'}`}>
+                                                {year === 1 ? 'Total Cost (Year 1, €)' : `License Costs (Year ${year}, €)`}
+                                            </td>
+                                            {mainSolutions.map(s => {
+                                                const yearCosts = calculateFiveYearCosts(costs[s.id]);
+                                                const displayCost = year === 1 ? yearCosts.year1 : yearCosts[`year${year}`];
+                                                return (
+                                                    <td key={`${s.id}-year-${year}`} className="py-3 px-4 border-b text-center text-gray-700">
+                                                        {displayCost.toLocaleString('en-US', { style: 'currency', currency: 'EUR', minimumFractionDigits: 0, maximumFractionDigits: 0 })}
+                                                    </td>
+                                                );
+                                            })}
+                                        </tr>
+                                    ))}
+                                    {/* 5-Year Total Cost */}
+                                    <tr className="bg-blue-100">
+                                        <td className="py-3 px-4 border-b text-gray-800 font-bold">5-Year Total Cost (€)</td>
+                                        {mainSolutions.map(s => {
+                                            const yearCosts = calculateFiveYearCosts(costs[s.id]);
+                                            return (
+                                                <td key={`${s.id}-5year-total`} className="py-3 px-4 border-b text-center text-blue-800 font-bold text-lg">
+                                                    {yearCosts.fiveYearTotal.toLocaleString('en-US', { style: 'currency', currency: 'EUR', minimumFractionDigits: 0, maximumFractionDigits: 0 })}
+                                                </td>
+                                            );
+                                        })}
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+
+                        {/* Chart Canvas */}
+                        <div className="h-96 w-full"> {/* Fixed height for the chart */}
+                            <canvas ref={chartRef}></canvas>
+                        </div>
                     </section>
                 </div>
             );
